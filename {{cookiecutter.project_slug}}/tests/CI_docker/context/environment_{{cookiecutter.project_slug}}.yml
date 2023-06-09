@@ -26,7 +26,7 @@ dependencies:
     # doc requirements
     - sphinx>=4.1.1
     - sphinx-argparse
-    - sphinx_autodoc_typehints
+    - sphinx-autodoc-typehints
     - sphinx_rtd_theme
 
     # deployment requirements
