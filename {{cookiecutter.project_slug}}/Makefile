@@ -115,13 +115,13 @@ servedocs: docs ## compile the docs watching for changes
 release: dist ## package and upload a release
 	twine upload dist/*
 
-dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
+dist: clean ## builds source package (requires twine and build)
+	python -m build --sdist
+	twine check dist/*
 	ls -l dist
 
 install: clean ## install the package to the active Python's site-packages
-	python setup.py install
+	pip install .
 
 gitlab_CI_docker:  ## Build a docker image for CI use within gitlab
 	cd ./tests/CI_docker/; bash ./build_{{ cookiecutter.project_slug }}_testsuite_image.sh

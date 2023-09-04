@@ -196,6 +196,7 @@ setup(
     include_package_data=True,
     keywords='{{ cookiecutter.project_slug }}',
     long_description=readme,
+    long_description_content_type = 'text/x-rst',
     name='{{ cookiecutter.project_slug }}',
     packages=find_packages(include=['{{ cookiecutter.project_slug }}', '{{ cookiecutter.project_slug }}.*']),
     setup_requires=req_setup,
