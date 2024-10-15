@@ -1,16 +1,6 @@
-{% set group = cookiecutter.gitlab_group_or_username -%}
-{% set subgroup = cookiecutter.gitlab_subgroup_name -%}
-{% set slug = cookiecutter.project_slug -%}
-{% if subgroup -%}
-    {%- set projecturl -%}{{ 'https://git.gfz-potsdam.de' }}/{{group}}/{{subgroup}}/{{slug}}{%- endset -%}
-{% else -%}
-    {%- set projecturl -%}{{ 'https://git.gfz-potsdam.de' }}/{{group}}/{{slug}}{%- endset -%}
-{% endif -%}
-#!/usr/bin/env python
-
-"""The setup script."""
-
+"""Main module."""
 {% if cookiecutter.open_source_license == 'MIT license' -%}
+
 # {{ cookiecutter.project_name }}, {{ cookiecutter.project_short_description }}
 #
 # Copyright (c) {% now 'local', '%Y' %}, {{ cookiecutter.full_name }} (GFZ Potsdam, {{ cookiecutter.email }})
@@ -54,6 +44,7 @@
 #
 # or has expressed by any other means his willingness to license under the EUPL.
 {% elif cookiecutter.open_source_license == 'BSD license' %}
+
 # {{ cookiecutter.project_name }}, {{ cookiecutter.project_short_description }}
 #
 # Copyright (c) {% now 'local', '%Y' %}, {{ cookiecutter.full_name }} (GFZ Potsdam, {{ cookiecutter.email }})
@@ -86,6 +77,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 {% elif cookiecutter.open_source_license == 'ISC license' -%}
+
 # {{ cookiecutter.project_name }}, {{ cookiecutter.project_short_description }}
 #
 # Copyright (c) {% now 'local', '%Y' %}, {{ cookiecutter.full_name }} (GFZ Potsdam, {{ cookiecutter.email }})
@@ -104,6 +96,7 @@
 # OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 {% elif cookiecutter.open_source_license == 'Apache Software License 2.0' -%}
+
 # {{ cookiecutter.project_name }}, {{ cookiecutter.project_short_description }}
 #
 # Copyright (c) {% now 'local', '%Y' %}, {{ cookiecutter.full_name }} (GFZ Potsdam, {{ cookiecutter.email }})
@@ -122,6 +115,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 {% elif cookiecutter.open_source_license == 'GNU General Public License v3' -%}
+
 # {{ cookiecutter.project_name }}, {{ cookiecutter.project_short_description }}
 #
 # Copyright (c) {% now 'local', '%Y' %}  {{ cookiecutter.full_name }} (GFZ Potsdam, {{ cookiecutter.email }})
@@ -148,89 +142,4 @@
 # This software was developed within the context [...]
 #
 # This program is not yet licensed and used for internal development only.
-{% endif %}
-from setuptools import setup, find_packages
-
-with open('README.rst') as readme_file:
-    readme = readme_file.read()
-
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
-version = {}
-with open("{{ cookiecutter.project_slug }}/version.py") as version_file:
-    exec(version_file.read(), version)
-
-req = [{%- if cookiecutter.command_line_interface|lower == 'click' %}'Click>=7.0'{%- endif %}]
-
-req_setup = [{%- if cookiecutter.use_pytest == 'y' %}'pytest-runner'{%- endif %}]
-
-req_test = [{%- if cookiecutter.use_pytest == 'y' %}'pytest>=3', 'pytest-cov', 'pytest-reporter-html1'{%- endif %}, 'urlchecker']
-
-req_doc = [
-    'sphinx>=4.1.1',
-    'sphinx-argparse',
-    'sphinx-autodoc-typehints',
-    'sphinx_rtd_theme'
-]
-
-req_lint = ['pre-commit']
-
-req_dev = ['twine'] + req_setup + req_test + req_doc + req_lint
-
-{%- set license_classifiers = {
-    'MIT license': 'License :: OSI Approved :: MIT License',
-    'BSD license': 'License :: OSI Approved :: BSD License',
-    'ISC license': 'License :: OSI Approved :: ISC License (ISCL)',
-    'Apache Software License 2.0': 'License :: OSI Approved :: Apache Software License',
-    'GNU General Public License v3': 'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-    'None': 'None'
-} %}
-
-setup(
-    author="{{ cookiecutter.full_name.replace('\"', '\\\"') }}",
-    author_email='{{ cookiecutter.email }}',
-    python_requires='>=3.7',
-    classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
-{%- if cookiecutter.open_source_license in license_classifiers %}
-        '{{ license_classifiers[cookiecutter.open_source_license] }}',
-{%- endif %}
-        'Natural Language :: English',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10'
-    ],
-    description="{{ cookiecutter.project_short_description }}",
-    {%- if 'no' not in cookiecutter.command_line_interface|lower %}
-    entry_points={
-        'console_scripts': [
-            '{{ cookiecutter.project_slug }}={{ cookiecutter.project_slug }}.{{ cookiecutter.project_slug }}_cli:main',
-        ],
-    },
-    {%- endif %}
-    extras_require={
-        "doc": req_doc,
-        "test": req_test,
-        "lint": req_lint,
-        "dev": req_dev
-    },
-    install_requires=req,
-{%- if cookiecutter.open_source_license in license_classifiers %}
-    license="{{ cookiecutter.open_source_license }}",
-{%- endif %}
-    include_package_data=True,
-    keywords='{{ cookiecutter.project_slug }}',
-    long_description=readme,
-    name='{{ cookiecutter.project_slug }}',
-    packages=find_packages(include=['{{ cookiecutter.project_slug }}', '{{ cookiecutter.project_slug }}.*']),
-    setup_requires=req_setup,
-    test_suite='tests',
-    tests_require=req_test,
-    url='{{ projecturl }}',
-    version=version['__version__'],
-    zip_safe=False,
-)
+{% endif -%}

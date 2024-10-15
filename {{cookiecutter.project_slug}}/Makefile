@@ -1,4 +1,5 @@
-.PHONY: clean clean-test clean-pyc clean-build docs help
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint
+
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -44,11 +45,18 @@ clean-pyc: ## remove Python file artifacts
 clean-test: ## remove test and coverage artifacts
 	rm -fr .tox/
 	rm -f .coverage
+	rm -fr .coverage.*
 	rm -fr htmlcov/
+	rm -fr report.html
+	rm -fr report.xml
+	rm -fr coverage.xml
 	rm -fr .pytest_cache
 
-lint: ## check style with flake8
-	flake8 {{ cookiecutter.project_slug }} tests
+lint: ## check style with pre-commit
+	pre-commit run --files {{ cookiecutter.project_slug }}/* > tests/linting/pre-commit-output.txt 2>&1 || true
+
+urlcheck: ## check for dead URLs
+	urlchecker check . --file-types .py,.rst,.md,.json
 
 test: ## run tests quickly with the default Python
 {%- if cookiecutter.use_pytest == 'y' %}
@@ -61,19 +69,38 @@ test-all: ## run tests on every Python version with tox
 	tox
 
 coverage: ## check code coverage quickly with the default Python
+	coverage erase
 {%- if cookiecutter.use_pytest == 'y' %}
 	coverage run --source {{ cookiecutter.project_slug }} -m pytest
 {%- else %}
-	coverage run --source {{ cookiecutter.project_slug }} setup.py test
+	coverage run --source {{ cookiecutter.project_slug }} bin setup.py test
 {%- endif %}
+	coverage combine 	# must be called in order to make coverage work in multiprocessing
 	coverage report -m
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
+pytest: clean-test ## Runs pytest with coverage and creates coverage and test report
+	## - puts the coverage results in the folder 'htmlcov'
+	## - generates cobertura 'coverage.xml' (needed to show coverage in GitLab MR changes)
+	## - generates 'report.html' based on pytest-reporter-html1
+	## - generates JUnit 'report.xml' to show the test report as a new tab in a GitLab MR
+	## NOTE: additional options pytest and coverage (plugin pyteest-cov) are defined in .pytest.ini and .coveragerc
+	pytest tests \
+		--verbosity=3 \
+		--color=yes \
+		--tb=short \
+		--cov={{ cookiecutter.project_slug }} \
+		--cov-report html:htmlcov \
+		--cov-report term-missing \
+		--cov-report xml:coverage.xml \
+		--template=html1/index.html --report=report.html \
+		--junitxml report.xml
+
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/{{ cookiecutter.project_slug }}.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ {{ cookiecutter.project_slug }}
+	sphinx-apidoc {{ cookiecutter.project_slug }} -o docs/ --private --doc-project 'Python API reference'
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
@@ -91,3 +118,6 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
+
+gitlab_CI_docker:  ## Build a docker image for CI use within gitlab
+	cd ./tests/CI_docker/; bash ./build_{{ cookiecutter.project_slug }}_testsuite_image.sh

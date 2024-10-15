@@ -5,6 +5,7 @@ import sys
 import subprocess
 import yaml
 import datetime
+import pytest
 from cookiecutter.utils import rmtree
 
 from click.testing import CliRunner
@@ -65,6 +66,9 @@ def test_year_compute_in_license_file(cookies):
 
 def project_info(result):
     """Get toplevel dir, project_slug, and project dir from baked cookies"""
+    assert result.exception is None
+    assert result.project.isdir()
+
     project_path = str(result.project)
     project_slug = os.path.split(project_path)[-1]
     project_dir = os.path.join(project_path, project_slug)
@@ -110,41 +114,6 @@ def test_bake_with_apostrophe_and_run_tests(cookies):
         assert result.project.isdir()
         run_inside_dir('python setup.py test', str(result.project)) == 0
 
-
-# def test_bake_and_run_travis_pypi_setup(cookies):
-#     # given:
-#     with bake_in_temp_dir(cookies) as result:
-#         project_path = str(result.project)
-#
-#         # when:
-#         travis_setup_cmd = ('python travis_pypi_setup.py'
-#                             ' --repo audreyr/cookiecutter-pypackage'
-#                             ' --password invalidpass')
-#         run_inside_dir(travis_setup_cmd, project_path)
-#         # then:
-#         result_travis_config = yaml.load(
-#             result.project.join(".travis.yml").open()
-#         )
-#         min_size_of_encrypted_password = 50
-#         assert len(
-#             result_travis_config["deploy"]["password"]["secure"]
-#         ) > min_size_of_encrypted_password
-
-
-def test_bake_without_travis_pypi_setup(cookies):
-    with bake_in_temp_dir(
-        cookies,
-        extra_context={'use_pypi_deployment_with_travis': 'n'}
-    ) as result:
-        result_travis_config = yaml.load(
-            result.project.join(".travis.yml").open(),
-            Loader=yaml.FullLoader
-        )
-        assert "deploy" not in result_travis_config
-        assert "python" == result_travis_config["language"]
-        # found_toplevel_files = [f.basename for f in result.project.listdir()]
-
-
 def test_bake_without_author_file(cookies):
     with bake_in_temp_dir(
         cookies,
@@ -187,6 +156,7 @@ def test_bake_selecting_license(cookies):
         'Apache Software License 2.0':
             'Licensed under the Apache License, Version 2.0',
         'GNU General Public License v3': 'GNU GENERAL PUBLIC LICENSE',
+        'None': 'None'
     }
     for license, target_string in license_strings.items():
         with bake_in_temp_dir(
@@ -220,9 +190,7 @@ def test_using_pytest(cookies):
         lines = test_file_path.readlines()
         assert "import pytest" in ''.join(lines)
         # Test the new pytest target
-        run_inside_dir('python setup.py pytest', str(result.project)) == 0
-        # Test the test alias (which invokes pytest)
-        run_inside_dir('python setup.py test', str(result.project)) == 0
+        run_inside_dir('pytest', str(result.project)) == 0
 
 
 def test_not_using_pytest(cookies):
@@ -235,34 +203,12 @@ def test_not_using_pytest(cookies):
         assert "import unittest" in ''.join(lines)
         assert "import pytest" not in ''.join(lines)
 
-
-# def test_project_with_hyphen_in_module_name(cookies):
-#     result = cookies.bake(
-#         extra_context={'project_name': 'something-with-a-dash'}
-#     )
-#     assert result.project is not None
-#     project_path = str(result.project)
-#
-#     # when:
-#     travis_setup_cmd = ('python travis_pypi_setup.py'
-#                         ' --repo audreyr/cookiecutter-pypackage'
-#                         ' --password invalidpass')
-#     run_inside_dir(travis_setup_cmd, project_path)
-#
-#     # then:
-#     result_travis_config = yaml.load(
-#         open(os.path.join(project_path, ".travis.yml"))
-#     )
-#     assert "secure" in result_travis_config["deploy"]["password"],\
-#         "missing password config in .travis.yml"
-
-
 def test_bake_with_no_console_script(cookies):
     context = {'command_line_interface': "No command-line interface"}
     result = cookies.bake(extra_context=context)
     project_path, project_slug, project_dir = project_info(result)
     found_project_files = os.listdir(project_dir)
-    assert "cli.py" not in found_project_files
+    assert "{{ cookiecutter.project_slug }}_cli.py" not in found_project_files
 
     setup_path = os.path.join(project_path, 'setup.py')
     with open(setup_path, 'r') as setup_file:
@@ -270,23 +216,11 @@ def test_bake_with_no_console_script(cookies):
 
 
 def test_bake_with_console_script_files(cookies):
-    context = {'command_line_interface': 'click'}
+    context = {'command_line_interface': 'Click'}
     result = cookies.bake(extra_context=context)
     project_path, project_slug, project_dir = project_info(result)
     found_project_files = os.listdir(project_dir)
-    assert "cli.py" in found_project_files
-
-    setup_path = os.path.join(project_path, 'setup.py')
-    with open(setup_path, 'r') as setup_file:
-        assert 'entry_points' in setup_file.read()
-
-
-def test_bake_with_argparse_console_script_files(cookies):
-    context = {'command_line_interface': 'argparse'}
-    result = cookies.bake(extra_context=context)
-    project_path, project_slug, project_dir = project_info(result)
-    found_project_files = os.listdir(project_dir)
-    assert "cli.py" in found_project_files
+    assert "{{ cookiecutter.project_slug }}_cli.py" in found_project_files
 
     setup_path = os.path.join(project_path, 'setup.py')
     with open(setup_path, 'r') as setup_file:
@@ -294,10 +228,10 @@ def test_bake_with_argparse_console_script_files(cookies):
 
 
 def test_bake_with_console_script_cli(cookies):
-    context = {'command_line_interface': 'click'}
+    context = {'command_line_interface': 'Click'}
     result = cookies.bake(extra_context=context)
     project_path, project_slug, project_dir = project_info(result)
-    module_path = os.path.join(project_dir, 'cli.py')
+    module_path = os.path.join(project_path, '{{ cookiecutter.project_slug }}', '{{ cookiecutter.project_slug }}_cli.py')
     module_name = '.'.join([project_slug, 'cli'])
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     cli = importlib.util.module_from_spec(spec)
@@ -313,12 +247,11 @@ def test_bake_with_console_script_cli(cookies):
     assert help_result.exit_code == 0
     assert 'Show this message' in help_result.output
 
-
 def test_bake_with_argparse_console_script_cli(cookies):
     context = {'command_line_interface': 'argparse'}
     result = cookies.bake(extra_context=context)
     project_path, project_slug, project_dir = project_info(result)
-    module_path = os.path.join(project_dir, 'cli.py')
+    module_path = os.path.join(project_path, '{{ cookiecutter.project_slug }}', '{{ cookiecutter.project_slug }}_cli.py')
     module_name = '.'.join([project_slug, 'cli'])
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     cli = importlib.util.module_from_spec(spec)

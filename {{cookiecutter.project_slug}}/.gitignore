@@ -46,6 +46,8 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+report.xml
+report.html
 
 # Translations
 *.mo
@@ -70,6 +72,9 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# Dask worker cache
+dask-worker-space/
 
 # pyenv
 .python-version
@@ -103,3 +108,13 @@ ENV/
 
 # IDE settings
 .vscode/
+
+# IntelliJ Idea family of suites
+.idea
+*.iml
+## File-based project format:
+*.ipr
+*.iws
+## mpeltonen/sbt-idea plugin
+.idea_modules/
+
